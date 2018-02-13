@@ -92,7 +92,7 @@ services:
       - fedora
       - solr
     volumes:
-      - /mnt/barnard/www/html/islandora:/var/www/html:/var/www/html
+      - /mnt/barnard/www/html/islandora:/var/www/html
 
 # Defined networks
 networks:
