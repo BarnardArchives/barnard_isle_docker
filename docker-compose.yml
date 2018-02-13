@@ -1,0 +1,104 @@
+version: '2'
+# ISLE Alpha 2, for Development and Testing.
+# Usernames and passwords to login to Tomcat on services fedora and solr is: admin,ild_tc_adm_2018 - this is specified in the default tomcat-users.xml and can be replaced if you desire (SHOULD BE IN PROD)
+services:
+
+  # PHPMyAdmin is a MySQL administration GUI.  It's helpful for me!
+  # Connect to this container @ http://0.0.0.0:8081 - the sql host is "mysql" and user is "root" with password set in the mysql service ENV.
+  myadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+    networks:
+      - int_network
+    ports: 
+      - 8081:80
+    volumes:
+      - /sessions
+    depends_on:
+      - mysql
+
+  mysql:
+    image: islandoracollabgroup/isle-mysql:alpha2
+    container_name: isle-a2-mysql
+    hostname: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=barnard123
+    networks:
+      - int_network
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./bcol/mysql/data:/sql_databases_for_import # I placed my sql.gz files in here and used phpmyadmin or mysql -uroot -p<MYSQL_ROOT_PASSWORD> <database> < drupal.sql
+      # A note about the line above.  Once your data is imported it is placed into the volume called "db_data" described next. 
+      - db_data:/var/lib/mysql
+      # The above data volume WILL persist across containers - you are NOT required to repopulate your DBs if you stop or rm the container.
+      - ./bcol/mysql/config/my.cnf:/etc/alternatives/my.cnf:ro # I had huge sql tables so yea I increased the mem.
+
+  fedora:
+    image: islandoracollabgroup/isle-fedora:alpha2
+    container_name: isle-a2-fedora
+    hostname: fedora
+    networks:
+      - int_network
+    ports:
+      - "8080:8080"
+      - "8777:80"
+    tty: true
+    depends_on:
+      - mysql
+      - solr
+    volumes:
+    - /mnt/barnard/islandora/fedora/data:/usr/local/fedora/data # Barnard's Fedora data folder and all subfolders from bare metal instance.
+    - ./bcol/fedora/config/fedora.fcfg:/usr/local/fedora/server/config/fedora.fcfg # Make sure your jbdc mysql string is correct, username, and password.
+    - ./bcol/fedora/config/fedora-users.xml:/usr/local/fedora/server/config/fedora-users.xml # Our Fedora Users
+    - ./bcol/fedora/config/filter-drupal.xml:/usr/local/fedora/server/config/filter-drupal.xml # hostname for mysql server is "mysql"
+    - ./bcol/fedoragsearch/config/fgsconfigFinal/fedoragsearch.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/fedoragsearch.properties
+    - ./bcol/fedoragsearch/config/fgsconfigFinal/fgsconfigObjects.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/fgsconfigObjects.properties
+    - ./bcol/fedoragsearch/config/fgsconfigFinal/index/FgsIndex/index.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/index/FgsIndex/index.properties
+    - ./bcol/fedoragsearch/config/fgsconfigFinal/repository/FgsRepos/repository.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/repository/FgsRepos/repository.properties
+    
+
+  solr:
+    image: islandoracollabgroup/isle-solr:alpha2
+    container_name: isle-a2-solr
+    hostname: solr
+    networks:
+      - int_network
+    ports:
+      - "8091:8080"
+      - "8983:8983"
+    tty: true
+    depends_on:
+      - mysql 
+    volumes:
+    - /mnt/barnard/islandora/fedora/solr/collection1/data:/usr/local/solr/collection1/data  # A COMPLETE OVERWRITE WITH BC'S DATA
+    - /mnt/barnard/islandora/fedora/solr/collection1/conf/schema.xml:/usr/local/solr/collection1/conf/schema.xml  # A COMPLETE OVERWRITE WITH BC'S DATA
+
+
+  apache:
+    image: islandoracollabgroup/isle-apache:alpha2
+    container_name: isle-a2-apache
+    hostname: digitalcollections
+    networks:
+      - int_network
+#       - ext_network
+    ports:
+      - "80:80"
+    tty: true
+    depends_on:
+      - mysql
+      - fedora
+      - solr
+    volumes:
+      - /mnt/barnard/www/html/islandora:/var/www/html:/var/www/html
+
+# Defined networks
+networks:
+  int_network:
+  ext_network:
+
+# Defined and saved
+volumes:
+  db_data:
