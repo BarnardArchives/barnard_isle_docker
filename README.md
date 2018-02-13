@@ -35,7 +35,8 @@ Have your backup data handy because you will use it to locate any values noted h
 Clone this repo so you have the normalized configs and docker-compose.yml.  
 
 For this demonstration we're going to directly mount our webroot files.  In production we'd likely put this on a volume.
-Because of this we need to modify _one file_ in our webroot:
+
+Irrespective of this we need to modify _one file_ in our webroot if we're migrating: Drupal's settings.php.
 
 In the webroot folder and traverse to sites/default and open settings.php.  Look for your $database connection and change the `host` to `mysql`.  Save and close.  Please also take note of your sql database, username, and password.
 
