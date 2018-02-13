@@ -58,7 +58,8 @@ Change the mysql root password!
 
 ### Phase 3:
 In the mysql data folder:
-Place your drupal.sql and fedora.sql.  The included users.sql must be edited with the values from your existing instance.  We have the DRUPAL MYSQL information from the above.  In the next section we'll find our Fedora SQL username and password to fill in!
+1. Place your drupal.sql and fedora.sql dumps here.
+2. The included users.sql should be edited with the values from your existing instance.  We have the DRUPAL MYSQL information from the above.  In the next section we'll find our Fedora SQL username and password to fill in!
 
 In the fedora folder:  
 1. `fedora-users.xml` please update `<fedoraPass>` with your own.  You may also change any other passwords you like.
@@ -88,7 +89,7 @@ You're free to mount as much or as little as you want here - I just did our foxm
 1. From the folder with the docker-compose.yml please type `docker-compose up -d mysql` OR
 if you would like to use PHPMyAdmin you just need to run `docker-compose up -d myadmin` and it will start both. 
 
-2. Connect to your sql instance `docker exec -it isle-a2-mysql bash` and import your sql dumps located in /sql_databases_for_import.  Alternatively see the docker-compose on how to connect to PHPMyAdmin and get importing that way. 
+2. Connect to your sql instance `docker exec -it isle-a2-mysql bash` and import your sql dumps located in /sql_databases_for_import.  Alternatively see the docker-compose on how to connect to PHPMyAdmin and get importing that way (i.e., just visit http://<host_ip>:8081/. the host is `mysql` username `root` password from the MySQL ENV.).
 
 3. Once you have that done that is, your imports are complete.  
 
