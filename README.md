@@ -51,7 +51,7 @@ In the webroot folder and traverse to sites/default and open settings.php.  Look
 
 `- /mnt/barnard/islandora/fedora/solr/collection1/conf/schema.xml:/usr/local/solr/collection1/conf/schema.xml  # A COMPLETE OVERWRITE WITH BC'S DATA` to point to your SCHEMA.xml.
 
-`- /mnt/barnard/www/html/islandora:/var/www/html:/var/www/html` to point to your webroot!
+`- /mnt/barnard/www/html/islandora:/var/www/html` to point to your webroot!
 
 Change the mysql root password!
 
