@@ -2,7 +2,7 @@
 
 To test the ISLE stack I'm using a CentOS Virtual Machine.  The main OS is Windows, and virtual machines are used to keep the machine sand-boxed (clean).
 
-You may run Docker directly on your machine if you desire.  ISLE will not work on Windows hence the need to get a real OS running.  Mac users are fine.
+You may run Docker directly on your machine if you desire.  ISLE will not work on Windows natively, so you must use a nice linux distro.  Mac users are fine.
 
 Our development environment from above looks like: Windows Computer -> Virtualbox running CentOS 7 -> Docker daemon -(magic)->ISLE STACK
 
