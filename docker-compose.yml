@@ -4,14 +4,14 @@ version: '2'
 services:
 
   # PHPMyAdmin is a MySQL administration GUI.  It's helpful for me!
-  # Connect to this container @ http://0.0.0.0:8081 - the sql host is "mysql" and user is "root" with password set in the mysql service ENV.
+  # Connect to this container @ http://<hostip>:8081 - the sql host is "mysql" and user is "root" with password set in the mysql service ENV.
   myadmin:
     image: phpmyadmin/phpmyadmin:latest
     container_name: phpmyadmin
     environment:
       - PMA_ARBITRARY=1
     networks:
-      - int_network
+      - isleinternal
     ports: 
       - 8081:80
     volumes:
@@ -22,26 +22,26 @@ services:
   mysql:
     image: islandoracollabgroup/isle-mysql:alpha2
     container_name: isle-a2-mysql
-    hostname: mysql
+    hostname: mysql # NB: unnecessary?
     environment:
-      - MYSQL_ROOT_PASSWORD=barnard123
+      - MYSQL_ROOT_PASSWORD=barnard123 # This is for development; on production the root password will not be stored in the compose.
     networks:
-      - int_network
+      - isleinternal
     ports:
       - "3306:3306"
     volumes:
-      - ./bcol/mysql/data:/sql_databases_for_import # I placed my sql.gz files in here and used phpmyadmin or mysql -uroot -p<MYSQL_ROOT_PASSWORD> <database> < drupal.sql
+      # - ./bcol/mysql/data:/sql_databases_for_import # I placed my sql.gz files in here and used phpmyadmin or mysql -uroot -p<MYSQL_ROOT_PASSWORD> <database> < drupal.sql
       # A note about the line above.  Once your data is imported it is placed into the volume called "db_data" described next. 
       - db_data:/var/lib/mysql
       # The above data volume WILL persist across containers - you are NOT required to repopulate your DBs if you stop or rm the container.
-      - ./bcol/mysql/config/my.cnf:/etc/alternatives/my.cnf:ro # I had huge sql tables so yea I increased the mem.
+      - ./bcol/mysql/config/my.cnf:/etc/alternatives/my.cnf:ro # This is likely deprecated, tlk to Gavin. 
 
   fedora:
     image: islandoracollabgroup/isle-fedora:alpha2
     container_name: isle-a2-fedora
     hostname: fedora
     networks:
-      - int_network
+      - isleinternal
     ports:
       - "8080:8080"
       - "8777:80"
@@ -65,7 +65,7 @@ services:
     container_name: isle-a2-solr
     hostname: solr
     networks:
-      - int_network
+      - isleinternal
     ports:
       - "8091:8080"
       - "8983:8983"
@@ -80,23 +80,44 @@ services:
   apache:
     image: islandoracollabgroup/isle-apache:alpha2
     container_name: isle-a2-apache
-    hostname: digitalcollections
     networks:
-      - int_network
-#       - ext_network
-    ports:
-      - "80:80"
+      isleinternal: 
+        aliases:  # this informs apache which virtual hosts to listen for (there is a reason for this)
+         - lucy.benjaminrosner.com  # FQDN of VHOST 1
+         - belle.benjaminrosner.com  # FQDN of VHOST 2 
     tty: true
     depends_on:
       - mysql
       - fedora
       - solr
     volumes:
+      - ./bcol/apache/conf/sites-enabled:/etc/apache2/sites-enabled # These need to be baked into the image and replace existing defaults.
+      - ./bcol/apache/conf/certs:/certs:ro  # SNAKEOIL Certificate DIR. This container is only on the INTERNAL NETWORK.
       - /mnt/barnard/www/html/islandora:/var/www/html
+
+
+  proxy:
+    image: nginx
+    container_name: isle-a2-proxy
+    networks:
+      - isleinternal
+      - ext_network
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - mysql
+      - fedora
+      - solr
+      - apache
+    volumes:
+      - ./bcol/proxy/config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./bcol/proxy/certs:/certs:ro  # REAL Certificate DIR.
+    command: [nginx-debug, '-g', 'daemon off;']
 
 # Defined networks
 networks:
-  int_network:
+  isleinternal:
   ext_network:
 
 # Defined and saved
