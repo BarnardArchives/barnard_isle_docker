@@ -4,9 +4,9 @@ To test the ISLE stack I'm using a CentOS Virtual Machine.  The main OS is Windo
 
 You may run Docker directly on your machine if you desire.  ISLE will not work on Windows natively.  Mac users are fine.
 
-Our development environment from above looks like: 
+*My* development environment from above appears as: 
 
-Windows Computer -> Virtualbox running CentOS 7 -> Docker daemon -(WORK)-> ISLE STACK
+Windows Computer -> Virtualbox running CentOS 7 -> Docker daemon <--> ISLE STACK {isolated docker network for stack communications}, with service `proxy` {on both internal, and *external* docker network} published ports 80/443 <== WAN
 
 ## Docker Vocab
 
