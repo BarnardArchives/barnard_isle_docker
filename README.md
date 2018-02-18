@@ -68,9 +68,9 @@ THIS IS ALL DONE ON THE HOST.  If you are ever to connect to a docker container 
  
   1. **ALL MIGRATORS** need to modify _one line_ in your Drupal settings.php.  In the webroot folder that will be mounted to the container, traverse to `./sites/default/` and open `settings.php`.  Look for your $database connection and change the `host` to `mysql`.  Save and close.  
   2. In the `config\fedora`  folder: 
-    - place your fedora-users.xml here or update the existing to match your users. 
-    - update filter-drupal.xml with your mysql username, password, and database name.  Do **not** change the host from `mysql`.
-    - update fedora.fcfg, searching for and updating:
+     - place your fedora-users.xml here or update the existing to match your users. 
+     - update filter-drupal.xml with your mysql username, password, and database name.  Do **not** change the host from `mysql`.
+     - update fedora.fcfg, searching for and updating:
 ```
     <param name="dbPassword" value="superSecretPassword">
       <comment>The database password.</comment>
@@ -85,11 +85,11 @@ THIS IS ALL DONE ON THE HOST.  If you are ever to connect to a docker container 
     </param>
 ```
   3. In the `config\fgsconfigFinal` folder:
-    - Search and update all instances of "superSecretPassword". I know this is painful, the password should be updated with your fedoraAdmin\fgsAdmin users (defined in `fedora-users.xml`).
-    - Please do not modify any host settings!  "solr" "mysql" "fedora" are valid hosts on the docker network!
-    - Have XSLTS? You're free to mount as much or as little as you want here - I just did our foxml because it's SLIGHTLY unique, but everything else was the same in terms of the actual transforms. Add an additional volume entry and point it to `your transforms: ...cant remember the path off the top...`
+     - Search and update all instances of "superSecretPassword". I know this is painful, the password should be updated with your fedoraAdmin\fgsAdmin users (defined in `fedora-users.xml`).
+     - Please do not modify any host settings!  "solr" "mysql" "fedora" are valid hosts on the docker network!
+     - Have XSLTS? You're free to mount as much or as little as you want here - I just did our foxml because it's SLIGHTLY unique, but everything else was the same in terms of the actual transforms. Add an additional volume entry and point it to `your transforms: ...cant remember the path off the top...`
 
-  NB: do not use the default thats here, it will NOT work.
+  NB: do not use the default that are provided here they will not work by default (they're here for learning and are key files).
 
 ### Phase 3: Initialize MySQL.
 
@@ -116,10 +116,15 @@ You may import your SQL databases from the CLI or using [phpMyAdmin](https://www
   2. If phpMyAdmin restarts: `docker-compose stop myadmin`
 
 ### Phase 5: Update your Islandora Drupal settings and HACK:
-  0. Website look funky?  Check your VHOSTS - I need to write more about this (new feature as of 17 FEB 2018).
+  0. Website look funky?  Check your VHOSTS in the compose AND review the NGINX proxy conf file.  
+     - There are so many way to handle VHOSTs: you have your pick to do it at `proxy` or at `apache`.  You could even run multiple `apache` containers to serve only ONE host each if you desired. Regardless, more to write about this new `proxy` container (new as of 17 FEB 2018).
   1. Visit your site at http://<host_ip>/.  If you ran are local to the instance (i.e., you're on the `host`) you can try (http://0.0.0.0:80).
   2. Login normally
   3. Settings -> Islandora -> Fedora, change the host to read `fedora` (i.e., `http://fedora:8080/fedora`)
   4. Settings -> Islandora -> Solr Index, change the host to read `solr` (e.g., `http://solr:8080/solr/collection1`)
 
 Visit your site and test!  It will be at whatever the EXTERNAL IP of your host is.  Port 80, 443, 8080, 8081, 8091 are the cool ones... please read the docker-compose for port forwards.
+
+### Phase 6: Issue reporting
+   If you've followed this and have questions or would like to report issues please report to this repo.
+   
