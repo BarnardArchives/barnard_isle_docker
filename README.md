@@ -1,20 +1,31 @@
-## General Migration Overview
+Barnard's Islanadora ISLE Migration Walk-through
+=
+status: in development
 
-To test the ISLE stack I'm using a CentOS Virtual Machine.  The main OS is Windows.
-
-You may run Docker directly on your machine if you desire.  ISLE will not work on Windows natively.  Mac users are fine.
-
-*My* development environment from above appears as: 
-
-Windows Computer -> Virtualbox running CentOS 7 -> Docker daemon <--> ISLE STACK {isolated docker network for stack communications}, with service `proxy` {on both internal, and *external* docker network} published ports 80/443 <== WAN
-
-## Docker Vocab
+## Definitions
 
   - "the host" always refers to the server or machine that is running Docker and ultimately the ISLE stack, whether real or virtual.
   - "volume" a Docker-daemon controlled place to hold data on the local file system.  Used to persist data across containers.
+  - "network" refers to a defined Docker network that is controlled by docker.  They have powerful implications in production.
 
-## Docker diagram
-  - Coming shortly.
+## General Migration Overview
+
+To test the ISLE stack my host is a CentOS Virtual Machine. The Virtual Machine is running on Windows.  Windows _is not the host_.
+
+You may run Docker directly on your machine if you would like, however ISLE will not work on Windows natively.  Mac users are free to Docker on.
+
+So *my* development environment from above appears like: 
+
+Windows Workstation -> VirtualBox running CentOS 7 (the host) -> Docker daemon -manages-> ISLE STACK == repository bliss.
+
+## Docker networking
+
+A quick and important note about networking and Docker.
+
+Services `fedora, solr, apache, mysql, proxy` communicate using an internal _private_ stack network.  The service `proxy` **also** joins an insecure network that is accessible to the WAN (or for testing "WAN" likely means a smaller internal network).  Why two networks?  Swarms, scaling, replicating.
+
+## Diagrams
+  - Coming shortly?
 
 ## The Migration Must Haves
 
@@ -49,7 +60,7 @@ THIS IS ALL DONE ON THE HOST.  If you are ever to connect to a docker container 
   4. Modify the the remaining volume definitions to point to the correct datastores.
   5. Add some FQDNs to apache.  We're making apache aware of the vhosts it will serve connections.
   6. Change the mysql root password.  This isn't safe for production and should be removed when you move to production.
-  7. Save and close your docker-compose.yml. 
+  7. Save and close _your_ docker-compose.yml. 
 
 
 ### Phase 2: migration configuration changes.
@@ -69,7 +80,7 @@ THIS IS ALL DONE ON THE HOST.  If you are ever to connect to a docker container 
       <comment>The database user name.</comment>
     </param>
 
-    <param name="jdbcURL" value="jdbc:mysql://mysql:3306/fedora3?useUnicode=true&amp;amp;characterEncoding=UTF-8&amp;amp;autoReconnect=true">
+    <param name="jdbcURL" value="jdbc:mysql://mysql:3306/{DatabaseName:fedora3}?useUnicode=true&amp;amp;characterEncoding=UTF-8&amp;amp;autoReconnect=true">
       <comment>The JDBC connection URL.</comment>
     </param>
 ```
@@ -82,14 +93,33 @@ THIS IS ALL DONE ON THE HOST.  If you are ever to connect to a docker container 
 
 ### Phase 3: Initialize MySQL.
 
-  1. From the folder with the docker-compose.yml please type `docker-compose up -d mysql` OR if you would like to use PHPMyAdmin just run `docker-compose up -d myadmin` and it will start both. 
-  2. Connect to your sql instance `docker exec -it isle-a2-mysql bash` and import your sql dumps located in /sql_databases_for_import.  Alternatively see the docker-compose on how to connect to PHPMyAdmin and get importing that way (i.e., just visit http://<host_ip>:8081/. the host is `mysql` username `root` password from the MySQL ENV.).
-  3. Once you have that done that is, your imports are complete.  
-  4. Comment out the lines in docker-compose for the import folder (if you'd like).
-  5. If you've used PHPMyAdmin and are now done with it `docker-compose stop myadmin`
+This step is designed to focus on importing our existing Drupal and Fedora SQL tables into a persisted Docker _volume_.
+
+You may import your SQL databases from the CLI or using [phpMyAdmin](https://www.phpMyAdmin.net/) a web interface for managing MySQL servers.
+
+  1. Place your SQL dumps in the `mysql\data` folder.  This folder is only used for import and can be deleted when we're finished.
+  2. Open a terminal and `cd` to the folder with your docker-compose.yml
+  3. Start MySQL
+     - CLI: run `docker-compose up -d mysql` 
+     - phpMyAdmin: run `docker-compose up -d myadmin` (this will start the server as well.) 
+  4. Import your data 
+     - CLI: run `docker exec -it isle-a2-mysql bash` to connect to your container.  Import your sql dumps: `cd /sql_databases_for_import` `mysql -uroot -p<MYSQLROOTPASS> < *.sql`
+     - phpMyAdmin: to connect phpMyAdmin visit http://<host_ip>:8081/. To login, the host is `mysql` username `root` password from the MySQL ENV. Click on import, browse to `/sql_databases_for_import` and, one by one, import your data.
+  5. Exit the container OR stop phpMyAdmin
+     - CLI: `exit;`
+     - phpMyAdmin: `docker-compose stop myadmin`
+  5. Your imports are complete! Your SQL data is now persisted in a Docker-controlled volume.  
+  6. Please comment out the line in docker-compose for the mysql import folder.  Do not remove the SQL files until you're done testing and satisfied. 
 
 ### Phase 4: Launch the rest of the stack.
-  1. Start the remainder of the stack with `docker-compose up -d`.
+  1. Start the remainder of the stack with `docker-compose up -d`
+  2. If phpMyAdmin restarts: `docker-compose stop myadmin`
 
-Visit your site and do things.  It will be at whatever the EXTERNAL IP of your host is. Port 80, 8080, 8081, 8091 are the important ones?  In Drupal you will need to change your fedora URL to read to be "fedora" and your solr host to be "solr" - you can use container names if that fails.
+### Phase 5: Update your Islandora Drupal settings and HACK:
+  0. Website look funky?  Check your VHOSTS - I need to write more about this (new feature as of 17 FEB 2018).
+  1. Visit your site at http://<host_ip>/.  If you ran are local to the instance (i.e., you're on the `host`) you can try (http://0.0.0.0:80).
+  2. Login normally
+  3. Settings -> Islandora -> Fedora, change the host to read `fedora` (i.e., `http://fedora:8080/fedora`)
+  4. Settings -> Islandora -> Solr Index, change the host to read `solr` (e.g., `http://solr:8080/solr/collection1`)
 
+Visit your site and test!  It will be at whatever the EXTERNAL IP of your host is.  Port 80, 443, 8080, 8081, 8091 are the cool ones... please read the docker-compose for port forwards.
