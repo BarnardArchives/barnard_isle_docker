@@ -87,7 +87,7 @@ THIS IS ALL DONE ON THE HOST.  If you are ever to connect to a docker container 
   3. In the `config\fgsconfigFinal` folder:
      - Search and update all instances of "superSecretPassword". I know this is painful, the password should be updated with your fedoraAdmin\fgsAdmin users (defined in `fedora-users.xml`).
      - Please do not modify any host settings!  "solr" "mysql" "fedora" are valid hosts on the docker network!
-     - Have XSLTS? You're free to mount as much or as little as you want here - I just did our foxml because it's SLIGHTLY unique, but everything else was the same in terms of the actual transforms. Add an additional volume entry and point it to `your transforms: ...cant remember the path off the top...`
+     - Have XSLTS? You're free to mount as much or as little as you want here - I just did our foxml because it's SLIGHTLY unique, but everything else was the same in terms of the actual transforms. Add an additional volume entry and point it to `./bcol/config/fgsconfigFinal/our_transforms:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/index/FgsIndex/islandora_transforms`
 
   NB: do not use the default that are provided here they will not work by default (they're here for learning and are key files).
 
