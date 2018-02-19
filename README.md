@@ -104,7 +104,7 @@ You may import your SQL databases from the CLI or using [phpMyAdmin](https://www
      - phpMyAdmin: run `docker-compose up -d myadmin` (this will start the server as well.) 
   4. Import your data 
      - CLI: run `docker exec -it isle-a2-mysql bash` to connect to your container.  Import your sql dumps: `cd /sql_databases_for_import` `mysql -uroot -p<MYSQLROOTPASS> < *.sql`
-     - phpMyAdmin: to connect phpMyAdmin visit http://<host_ip>:8081/. To login, the host is `mysql` username `root` password from the MySQL ENV. Click on import, browse to `/sql_databases_for_import` and, one by one, import your data.
+     - phpMyAdmin: to connect phpMyAdmin visit http://<host_ip>:8081/. To login, the host is `mysql` username `root` password from the MySQL ENV. Click on import and select the users.sql first. Now go to your Fedora database, hit import (find correct file and import) and the same for your Drupal db.  
   5. Exit the container OR stop phpMyAdmin
      - CLI: `exit;`
      - phpMyAdmin: `docker-compose stop myadmin`
@@ -112,8 +112,8 @@ You may import your SQL databases from the CLI or using [phpMyAdmin](https://www
   6. Please comment out the line in docker-compose for the mysql import folder.  Do not remove the SQL files until you're done testing and satisfied. 
 
 ### Phase 4: Launch the rest of the stack.
-  1. Start the remainder of the stack with `docker-compose up -d`
-  2. If phpMyAdmin restarts: `docker-compose stop myadmin`
+  1. Start the remainder of the stack with `docker-compose up -d proxy`
+  2. If phpMyAdmin is running and you no longer need it: `docker-compose stop myadmin`
 
 ### Phase 5: Update your Islandora Drupal settings and HACK:
   0. Website look funky?  Check your VHOSTS in the compose AND review the NGINX proxy conf file.  
