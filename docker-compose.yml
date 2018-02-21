@@ -142,7 +142,7 @@ networks:
     # EG (and my use case): Linux (maybe Mac) users can use MACVLAN as a way to make hosts on this network appear as though they were directly connected to the network.
     ## https://blog.docker.com/2016/12/understanding-docker-networking-drivers-use-cases/  (nice)
   ## The following is an example.  Do not use it, it is specific to Benjamin's setup!  Do not uncomment unless you understand fully:
-  # docker-external:  #  a) how to create a `docker network` using `docker create network` (this is why "external" is true) or b) create the docker-external definition in the compose
+  # docker-external:  #  a) how to create a `docker network` using `docker network create` (this is why "external" is true) or b) create the docker-external definition in the compose
     # external: true  # Note that this is the only actual ingress point (from the WAN) for Docker services on my host.  For the SYSADMINS: this is a macvlan to a bonded parent device.
 
 
