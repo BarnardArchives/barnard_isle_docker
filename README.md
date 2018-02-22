@@ -1,6 +1,7 @@
 Barnard's Islanadora ISLE Migration Walk-through
 =
-status: in development
+status: post-alpha, running and testing.  ++  server occasionaly available online http://belle.benjaminrosner.com.
+This repository (branch and tagged eventually) is a compose specifically meant to keep a clean, running compose file; all thoughts are in other branches.  Nb: don't pull this branch/tag unless you fully understand - else please use MASTER
 
 ## Definitions
 
