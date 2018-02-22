@@ -73,8 +73,7 @@ services:
     networks:
       isleinternal:
         aliases:
-         - lucy.benjaminrosner.com  # FQDN of VHOST 1
-         - belle.benjaminrosner.com  # FQDN of VHOST 2
+         - belle.benjaminrosner.com  # FQDN
     tty: true
     depends_on:
       - mysql
