@@ -26,7 +26,7 @@ services:
 
   mysql:
     image: islandoracollabgroup/isle-mysql
-    container_name: isle-a2-mysql
+    container_name: isle-mysql
     hostname: mysql # NB: unnecessary?
     environment:
       - MYSQL_ROOT_PASSWORD=barnard123 # This is for development; on production the root password will not be stored in the compose.
@@ -45,7 +45,7 @@ services:
 
   fedora:
     image: islandoracollabgroup/isle-fedora
-    container_name: isle-a2-fedora
+    container_name: isle-fedora
     hostname: fedora
     networks:
       - isleinternal
@@ -75,7 +75,7 @@ services:
 
   solr:
     image: islandoracollabgroup/isle-solr
-    container_name: isle-a2-solr
+    container_name: isle-solr
     hostname: solr
     networks:
       - isleinternal
@@ -95,7 +95,7 @@ services:
 
   apache:
     image: islandoracollabgroup/isle-apache
-    container_name: isle-a2-apache
+    container_name: isle-apache
     networks:
       isleinternal: 
     tty: true
@@ -112,7 +112,7 @@ services:
 
   proxy:
     image: nginx
-    container_name: isle-a2-proxy
+    container_name: isle-proxy
     networks:
       isleinternal:
         aliases:  # For INTERNAL RESOLUTION to the docker-internal-network IP??
