@@ -18,7 +18,7 @@ services:
     restart: 'no'
 
   mysql:
-    image: islandoracollabgroup/isle-mysql:alpha2
+    image: islandoracollabgroup/isle-mysql
     container_name: isle-a2-mysql
     hostname: mysql
     networks:
@@ -26,10 +26,12 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./bcol/mysql/config/my.cnf:/etc/alternatives/my.cnf:ro
+    environment:
+      - MYSQL_ROOT_PASSWORD=ild_mysqlrt_2018
     # restart: unless-stopped
 
   fedora:
-    image: islandoracollabgroup/isle-fedora:alpha2
+    image: islandoracollabgroup/isle-fedora
     container_name: isle-a2-fedora
     hostname: fedora
     networks:
@@ -49,16 +51,19 @@ services:
     - ./bcol/fedoragsearch/config/fgsconfigFinal/fgsconfigObjects.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/fgsconfigObjects.properties
     - ./bcol/fedoragsearch/config/fgsconfigFinal/index/FgsIndex/index.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/index/FgsIndex/index.properties
     - ./bcol/fedoragsearch/config/fgsconfigFinal/repository/FgsRepos/repository.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/repository/FgsRepos/repository.properties
+    - /dev/null:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/lib/log4j-over-slf4j-1.5.10.jar  # ha. ridiculous hack.
     # restart: unless-stopped
+    command: /usr/local/tomcat/bin/catalina.sh run
+
 
   solr:
-    image: islandoracollabgroup/isle-solr:alpha2
+    image: islandoracollabgroup/isle-solr
     container_name: isle-a2-solr
     hostname: solr
     networks:
       - isleinternal
     ports:
-      - "8091:8080"
+      - "8082:8080"
     tty: true
     depends_on:
       - mysql 
@@ -68,12 +73,10 @@ services:
     # restart: unless-stopped
 
   apache:
-    image: islandoracollabgroup/isle-apache:alpha2
+    image: islandoracollabgroup/isle-apache
     container_name: isle-a2-apache
     networks:
       isleinternal:
-        aliases:
-         - belle.benjaminrosner.com  # FQDN
     tty: true
     depends_on:
       - mysql
@@ -93,6 +96,8 @@ services:
       docker-external:
         ipv4_address: 192.168.1.210
       isleinternal:
+        aliases:
+          - belle.benjaminrosner.com
       isleexternal:
     ports:
       - "80:80"
