@@ -108,10 +108,13 @@ services:
       - solr
       - apache
     volumes:
-      - ./bcol/proxy/config/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./bcol/proxy/config/sites:/etc/nginx/conf.d:ro
-      - ./bcol/proxy/certs:/certs:ro
-      - ./bcol/proxy/config/htpasswd:/etc/nginx/htpasswd # test: require pass to Solr admin.  See conf.d, htpasswd.
+      - ./bcol/proxy/config/nginx.conf:/etc/nginx/nginx.conf:ro  # Global configuration that has been cleaned - good for main image.
+      - ./bcol/proxy/certs:/certs:ro  # Certs! Oh nom nom.  - For the image we'll create self-signed certs - we'll need to disable stapling
+      ### END USER AND STUFFS
+      - ./bcol/proxy/config/conf.d:/etc/nginx/conf.d # Folder for global nginx configuration (proxy-global is notable and needs to be baked in).
+      - ./bcol/proxy/config/sites-enabled:/etc/nginx/sites-enabled # folder for vhosts (nginx server definitions)
+      ### BEN'S TESTING AND UNEEDED
+      - ./bcol/proxy/config/htpasswd:/etc/nginx/htpasswd # Only really for testing and NOT NEEDED!
     # restart: unless-stopped
     # command: [nginx-debug, '-g', 'daemon off;']
 
