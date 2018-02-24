@@ -1,4 +1,4 @@
-version: '2'
+version: '3' # Just don't use '1'
 # ISLE Alpha 2, for Development and Testing.
 # Usernames and passwords to login to Tomcat on services fedora and solr is: admin,ild_tc_adm_2018 
 # this is specified in the default tomcat-users.xml and SHOULD be replaced in production.  I think for testing purposes, default tomcat-users is fine.
@@ -40,7 +40,7 @@ services:
       - db_data:/var/lib/mysql
       # The above data volume WILL persist across containers - you are NOT required to repopulate your DBs if you stop or rm the container.
       - ./bcol/mysql/config/my.cnf:/etc/alternatives/my.cnf:ro # This is likely deprecated, tlk to Gavin.
-    restart: unless-stopped
+    # restart: unless-stopped  # In production set this to "never" or "unless-stopped"! 
 
 
   fedora:
@@ -68,8 +68,10 @@ services:
     - ./bcol/fedoragsearch/config/fgsconfigFinal/fgsconfigObjects.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/fgsconfigObjects.properties
     - ./bcol/fedoragsearch/config/fgsconfigFinal/index/FgsIndex/index.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/index/FgsIndex/index.properties
     - ./bcol/fedoragsearch/config/fgsconfigFinal/repository/FgsRepos/repository.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/repository/FgsRepos/repository.properties
-    restart: unless-stopped
-
+    - /dev/null:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/lib/log4j-over-slf4j-1.5.10.jar # This is a hack that is likely deprecated and uneeded.  It's also funny because why not just create a blank file?
+    command: /usr/local/tomcat/bin/catalina.sh run # deprecate and stop apache from loading on this container until it is removed at a later date!
+    # restart: unless-stopped
+    
 
   solr:
     image: islandoracollabgroup/isle-solr
@@ -84,9 +86,11 @@ services:
     depends_on:
       - mysql 
     volumes:
-    - /mnt/barnard/islandora/fedora/solr/collection1/data:/usr/local/solr/collection1/data  # A COMPLETE OVERWRITE WITH BC'S DATA
-    - /mnt/barnard/islandora/fedora/solr/collection1/conf/schema.xml:/usr/local/solr/collection1/conf/schema.xml  # A COMPLETE OVERWRITE WITH BC'S DATA
-    restart: unless-stopped
+    # A COMPLETE OVERWRITE WITH BC'S DATA
+    - /mnt/barnard/islandora/fedora/solr/collection1/data:/usr/local/solr/collection1/data
+    # A COMPLETE OVERWRITE WITH BC'S DATA
+    - /mnt/barnard/islandora/fedora/solr/collection1/conf/schema.xml:/usr/local/solr/collection1/conf/schema.xml
+    # restart: unless-stopped
 
 
   apache:
@@ -94,9 +98,6 @@ services:
     container_name: isle-a2-apache
     networks:
       isleinternal: 
-        aliases:   # this is here for IP resolution of those FQDN's to the INTERNAL NETWORK IP address.
-         - lucy.benjaminrosner.com  # FQDN of VHOST 1  (so that the docker network can resolve the IP address of this container internally and service requests for it)
-         - belle.benjaminrosner.com  # FQDN of VHOST 2...n 
     tty: true
     depends_on:
       - mysql
@@ -106,7 +107,7 @@ services:
       - ./bcol/apache/conf/sites-enabled:/etc/apache2/sites-enabled # These need to be baked into the image and replace existing defaults.
       - ./bcol/apache/conf/certs:/certs:ro  # SNAKEOIL Certificate DIR. This container is only on the INTERNAL NETWORK.
       - /mnt/barnard/www/html/islandora:/var/www/html
-    restart: unless-stopped
+    # restart: unless-stopped
 
 
   proxy:
@@ -114,6 +115,8 @@ services:
     container_name: isle-a2-proxy
     networks:
       isleinternal:
+        aliases:
+         - belle.benjaminrosner.com  # FQDN of VHOST 1  (so that the docker network can resolve the IP address of this container internally and service requests for it - or not, we don't know if this is really ness.)
       ext_network:
       # docker-external:  ## Please see the defined networks below.  This is only an example and will not work on your host until such a network is created on the host.
         # ipv4_address: 192.168.1.210
@@ -126,12 +129,14 @@ services:
       - solr
       - apache
     volumes:
-      - ./bcol/proxy/config/nginx.conf:/etc/nginx/nginx.conf:ro  ## Primary - (note, Benjamin's example could likely be simplified way down if there are more familiar with nginx!)
-      - ./bcol/proxy/config/sites:/etc/nginx/conf.d:ro ## missed in the first pass - the conf folder (e.g., production.conf, development.conf, etc.) 
-                                                       ## this permits more configs so things can be simplified further, by reducing duplication, or just by having different site configs for clarity, etc. (I hope.)
-      - ./bcol/proxy/certs:/certs:ro  # REAL Certificate DIR.
-    # command: [nginx-debug, '-g', 'daemon off;']  ## Please uncomment this line if you'd like to verbose debug logging.
-    restart: unless-stopped 
+      ## Primary site and config. (note, Benjamin's example could likely be simplified way down if there are more familiar with nginx!)
+      - ./bcol/proxy/config/nginx.conf:/etc/nginx/nginx.conf:ro  
+      ## this folder permits addt'l configs so things can be simplified further, by reducing duplication, or just by having different site configs for clarity, etc. (I hope.) 
+      - ./bcol/proxy/config/sites:/etc/nginx/conf.d:ro 
+      # REAL Certificate DIR.
+      - ./bcol/proxy/certs:/certs:ro
+    # command: [nginx-debug, '-g', 'daemon off;']  ## Please uncomment this line if you'd like verbose debug logging.
+    # restart: unless-stopped
 
 
 # Defined networks
