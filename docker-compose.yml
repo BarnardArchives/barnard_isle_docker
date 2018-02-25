@@ -19,7 +19,7 @@ services:
 
   mysql:
     image: islandoracollabgroup/isle-mysql
-    container_name: isle-mysql
+    container_name: isle-a2-mysql
     hostname: mysql
     networks:
       - isleinternal
@@ -27,19 +27,17 @@ services:
       - db_data:/var/lib/mysql
       - ./bcol/mysql/config/my.cnf:/etc/alternatives/my.cnf:ro
     environment:
-      - MYSQL_ROOT_PASSWORD=barnard123
+      - MYSQL_ROOT_PASSWORD=ild_mysqlrt_2018
     # restart: unless-stopped
 
   fedora:
     image: islandoracollabgroup/isle-fedora
-    container_name: isle-fedora
+    container_name: isle-a2-fedora
     hostname: fedora
     networks:
       - isleinternal
-    expose:
-      - 8080
-    # ports:
-    #   - "8080:8080"
+    ports:
+      - "8080:8080"
     tty: true
     depends_on:
       - mysql
@@ -60,12 +58,12 @@ services:
 
   solr:
     image: islandoracollabgroup/isle-solr
-    container_name: isle-solr
+    container_name: isle-a2-solr
     hostname: solr
     networks:
       - isleinternal
-    # ports:
-    #   - "8082:8080"
+    ports:
+      - "8082:8080"
     tty: true
     depends_on:
       - mysql 
@@ -76,7 +74,7 @@ services:
 
   apache:
     image: islandoracollabgroup/isle-apache
-    container_name: isle-apache
+    container_name: isle-a2-apache
     networks:
       isleinternal:
     tty: true
@@ -92,15 +90,14 @@ services:
 
   proxy:
     image: nginx
-    # hostname: belle
-    container_name: isle-proxy
+    hostname: belle
+    container_name: isle-a2-proxy
     networks:
       docker-external:
         ipv4_address: 192.168.1.210
       isleinternal:
         aliases:
           - belle.benjaminrosner.com
-          - belle.r-ben.com
       isleexternal:
     ports:
       - "80:80"

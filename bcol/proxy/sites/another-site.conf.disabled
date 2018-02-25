@@ -1,6 +1,6 @@
 
 user  nginx;
-worker_processes  8;
+worker_processes  4;
 
 error_log  /var/log/nginx/error.log warn;
 pid        /var/run/nginx.pid;
@@ -29,23 +29,25 @@ http {
     #
     # and of course nb:
     # This also might defeat the purpose of letting DOCKER do the balancing, but I hope that this can serve as a start.
-    upstream fedora-dev {
+    upstream fedora {
         server fedora:8080 fail_timeout=0;
     }  
 
-    upstream solr-dev {
+    upstream solr {
         server solr:8080 fail_timeout=0;
     }
 
-    upstream web-dev {
+    upstream web {
         server apache:443 fail_timeout=0;
     }
 
     # Redirect to SSL, nothing fancy.
     server {
         listen 80;
-        server_name     belle.benjaminrosner.com;
-        return 301  https://$host$request_uri;
+        
+        server_name     lucy.benjaminrosner.com belle.benjaminrosner.com *.arebenji.com;
+        
+        return 301 https://$host$request_uri;
     }
 
     server {
@@ -53,7 +55,7 @@ http {
 
         ####
         # Server Alais
-        server_name     belle.benjaminrosner.com;
+        server_name     lucy.benjaminrosner.com belle.benjaminrosner.com, *.arebenji.com;
         # Server Certificates (EXTERNAL CERTS)
         ssl_certificate     /certs/benjaminrosner.com.chain.crt;
         ssl_certificate_key     /certs/benjaminrosner.com.key;
@@ -77,51 +79,46 @@ http {
         # HSTS
         add_header Strict-Transport-Security max-age=15768000;
 
-        # Proxy headers to handle tomcats and apache. 
+        # Proxy headers.
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Server $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_redirect off;
-        add_header  Front-End-Https   on;
 
-        ### ALL INGRESS AND EGRESS FOR END-USERS ###
-
-        # Proxy drupal to the outside.
+        # Proxy Drupal.
         location / {
-            proxy_pass https://web-dev;
+            proxy_pass https://web;
         }
 
-        # Proxy adore-djatoka image resolver to the outside.  
+        # Proxy and rewrite adore-djatoka.  Recall we're intrastack.
         location /adore-djatoka  {
-            proxy_pass http://fedora-dev/adore-djatoka;
+
+            # If we are requesting from resolver, remove https from the query string of the image resource and rewrite.
+            # NB: There are several potential issues to using such a greedy regex.  If it could be limited to just rewrite calls for _this_ $host that would be desirable behavior.
+            # e.g. stub: $host isin $args ? rewrite : return;
+            if ($args ~* ^(.*)(rft_id=https)(.*)$) {
+                set $args $1rft_id=http$3;
+            rewrite ^(.*)$ $1;
+            }
+            proxy_pass http://fedora/adore-djatoka;
         }
 
-        ### # THIS IS ONLY FOR TESTING # ###
-        location /solr {
-            auth_basic "private";
-            auth_basic_user_file /etc/nginx/htpasswd;
-            proxy_pass http://solr-dev;
-        }
-        ### # END OF TEST # ###
-
-        # Start all of the FEDORA stuffs to the outside.
+        # Start all of the FEDORA stuffs
         location /fedora/get {
-            proxy_pass http://fedora-dev/fedora/get;
+            proxy_pass http://fedora/fedora/get;
         }
 
         location /fedora/services {
-            proxy_pass http://fedora-dev/fedora/services;
+            proxy_pass http://fedora/fedora/services;
         }
 
         location /fedora/describe {
-            proxy_pass http://fedora-dev/fedora/describe;
+            proxy_pass http://fedora/fedora/describe;
         }
 
         location /fedora/risearch {
-            proxy_pass http://fedora-dev/fedora/risearch;
+            proxy_pass http://fedora/fedora/risearch;
         }
     }
 }
