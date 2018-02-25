@@ -1,13 +1,7 @@
-version: '3' # Just don't use '1'
-# ISLE Alpha 2, for Development and Testing.
-# Usernames and passwords to login to Tomcat on services fedora and solr is: admin,ild_tc_adm_2018 
-# this is specified in the default tomcat-users.xml and SHOULD be replaced in production.  I think for testing purposes, default tomcat-users is fine.
+version: '3'
 
-#Define our services.
 services:
 
-  # PHPMyAdmin is a MySQL administration GUI.  It's helpful for me!  https://www.phpmyadmin.net/
-  # Connect to this container @ http://<hostip>:8081 - the sql host is "mysql" and user is "root" with password set in the mysql service ENV.
   myadmin:
     image: phpmyadmin/phpmyadmin:latest
     container_name: phpmyadmin
@@ -21,27 +15,20 @@ services:
       - /sessions
     depends_on:
       - mysql
-    restart: no   ## other options are "no" "unless-stopped" "on-failure".  We need a health check for the latter most option.
-
+    restart: 'no'
 
   mysql:
     image: islandoracollabgroup/isle-mysql
     container_name: isle-mysql
-    hostname: mysql # NB: unnecessary?
-    environment:
-      - MYSQL_ROOT_PASSWORD=barnard123 # This is for development; on production the root password will not be stored in the compose.
+    hostname: mysql
     networks:
       - isleinternal
-    ports:
-      - "3306:3306"
     volumes:
-      # - ./bcol/mysql/data:/sql_databases_for_import # Place SQL dump files here;  note:  I've been using phpmyadmin and uploading the .sql.gz files (which are on my desktop) this way.
-      # A note about the line above.  Once your data is imported it is placed into the volume called "db_data" described next. 
       - db_data:/var/lib/mysql
-      # The above data volume WILL persist across containers - you are NOT required to repopulate your DBs if you stop or rm the container.
-      - ./bcol/mysql/config/my.cnf:/etc/alternatives/my.cnf:ro # This is likely deprecated, tlk to Gavin.
-    # restart: unless-stopped  # In production set this to "never" or "unless-stopped"! 
-
+      - ./bcol/mysql/config/my.cnf:/etc/alternatives/my.cnf:ro
+    environment:
+      - MYSQL_ROOT_PASSWORD=barnard123
+    # restart: unless-stopped
 
   fedora:
     image: islandoracollabgroup/isle-fedora
@@ -49,29 +36,27 @@ services:
     hostname: fedora
     networks:
       - isleinternal
-    ports:
-      - "8080:8080"
-      - "8777:80"
+    expose:
+      - 8080
+    # ports:
+    #   - "8080:8080"
     tty: true
     depends_on:
       - mysql
       - solr
     volumes:
-    ## Fedora datastore!
-    - /mnt/barnard/islandora/fedora/data:/usr/local/fedora/data # Barnard's Fedora data folder and all subfolders from bare metal instance.
-    ## Fedora config
-    - ./bcol/fedora/config/fedora.fcfg:/usr/local/fedora/server/config/fedora.fcfg # Make sure your jbdc mysql string is correct: username, password, and database name.
-    - ./bcol/fedora/config/fedora-users.xml:/usr/local/fedora/server/config/fedora-users.xml # Our Fedora Users
-    - ./bcol/fedora/config/filter-drupal.xml:/usr/local/fedora/server/config/filter-drupal.xml # hostname for mysql server is "mysql"
-    ## FGS config
+    - /zfs-serverpools/barnardcollege/islandora/fedora/data:/usr/local/fedora/data
+    - ./bcol/fedora/config/fedora.fcfg:/usr/local/fedora/server/config/fedora.fcfg
+    - ./bcol/fedora/config/fedora-users.xml:/usr/local/fedora/server/config/fedora-users.xml
+    - ./bcol/fedora/config/filter-drupal.xml:/usr/local/fedora/server/config/filter-drupal.xml 
     - ./bcol/fedoragsearch/config/fgsconfigFinal/fedoragsearch.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/fedoragsearch.properties
     - ./bcol/fedoragsearch/config/fgsconfigFinal/fgsconfigObjects.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/fgsconfigObjects.properties
     - ./bcol/fedoragsearch/config/fgsconfigFinal/index/FgsIndex/index.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/index/FgsIndex/index.properties
     - ./bcol/fedoragsearch/config/fgsconfigFinal/repository/FgsRepos/repository.properties:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/repository/FgsRepos/repository.properties
-    - /dev/null:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/lib/log4j-over-slf4j-1.5.10.jar # This is a hack that is likely deprecated and uneeded.  It's also funny because why not just create a blank file?
-    command: /usr/local/tomcat/bin/catalina.sh run # deprecate and stop apache from loading on this container until it is removed at a later date!
+    - /dev/null:/usr/local/tomcat/webapps/fedoragsearch/WEB-INF/lib/log4j-over-slf4j-1.5.10.jar  # ha. ridiculous hack.
     # restart: unless-stopped
-    
+    command: /usr/local/tomcat/bin/catalina.sh run
+
 
   solr:
     image: islandoracollabgroup/isle-solr
@@ -79,44 +64,43 @@ services:
     hostname: solr
     networks:
       - isleinternal
-    ports:
-      - "8091:8080"
-      - "8983:8983"
+    # ports:
+    #   - "8082:8080"
     tty: true
     depends_on:
       - mysql 
     volumes:
-    # A COMPLETE OVERWRITE WITH BC'S DATA
-    - /mnt/barnard/islandora/fedora/solr/collection1/data:/usr/local/solr/collection1/data
-    # A COMPLETE OVERWRITE WITH BC'S DATA
-    - /mnt/barnard/islandora/fedora/solr/collection1/conf/schema.xml:/usr/local/solr/collection1/conf/schema.xml
+    - /zfs-serverpools/barnardcollege/islandora/solr/collection1/data:/usr/local/solr/collection1/data
+    - /zfs-serverpools/barnardcollege/islandora/solr/collection1/conf/schema.xml:/usr/local/solr/collection1/conf/schema.xml
     # restart: unless-stopped
-
 
   apache:
     image: islandoracollabgroup/isle-apache
     container_name: isle-apache
     networks:
-      isleinternal: 
+      isleinternal:
     tty: true
     depends_on:
       - mysql
       - fedora
       - solr
     volumes:
-      - ./bcol/apache/conf/sites-enabled:/etc/apache2/sites-enabled # These need to be baked into the image and replace existing defaults.
-      - ./bcol/apache/conf/certs:/certs:ro  # SNAKEOIL Certificate DIR. This container is only on the INTERNAL NETWORK.
-      - /mnt/barnard/www/html/islandora:/var/www/html
+      - ./bcol/apache/conf/sites-enabled:/etc/apache2/sites-enabled
+      - ./bcol/apache/conf/certs:/certs:ro #SNAKEOILS
+      - /zfs-serverpools/barnardcollege/islandora/html:/var/www/html
     # restart: unless-stopped
-
 
   proxy:
     image: nginx
+    # hostname: belle
     container_name: isle-proxy
     networks:
+      docker-external:
+        ipv4_address: 192.168.1.210
       isleinternal:
-        aliases:  # For INTERNAL RESOLUTION to the docker-internal-network IP??
+        aliases:
           - belle.benjaminrosner.com
+          - belle.r-ben.com
       isleexternal:
     ports:
       - "80:80"
@@ -132,19 +116,17 @@ services:
       ### END USER AND STUFFS
       - ./bcol/proxy/config/conf.d:/etc/nginx/conf.d # Folder for global nginx configuration (proxy-global is notable and needs to be baked in).
       - ./bcol/proxy/config/sites-enabled:/etc/nginx/sites-enabled # folder for vhosts (nginx server definitions)
+      ### BEN'S TESTING AND UNEEDED
+      - ./bcol/proxy/config/htpasswd:/etc/nginx/htpasswd # Only really for testing and NOT NEEDED!
     # restart: unless-stopped
     # command: [nginx-debug, '-g', 'daemon off;']
 
-
-# Defined networks
 networks:
   isleinternal:
   isleexternal:
-  
-  # Take a look a docker networking, here are things you can do in a compose environment.  lots of this becomes easier with overlays :/
-  # EG (and my use case): Linux (maybe Mac) users can use MACVLAN as a way to make hosts on this network appear as though they were directly connected to the network. In this way you could put "proxy" on the network and route to it.
-  ## https://blog.docker.com/2016/12/understanding-docker-networking-drivers-use-cases/  (nice)
+  docker-external:
+    external: true
 
-# Defined and saved
+
 volumes:
   db_data:
