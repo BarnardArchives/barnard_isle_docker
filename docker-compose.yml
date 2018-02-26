@@ -130,8 +130,9 @@ services:
       - ./bcol/proxy/config/nginx.conf:/etc/nginx/nginx.conf:ro  # Global configuration that has been cleaned - good for main image.
       - ./bcol/proxy/certs:/certs:ro  # Certs! Oh nom nom.  - For the image we'll create self-signed certs - we'll need to disable stapling
       ### END USER AND STUFFS
-      - ./bcol/proxy/config/conf.d:/etc/nginx/conf.d # Folder for global nginx configuration (proxy-global is notable and needs to be baked in).
-      - ./bcol/proxy/config/sites-enabled:/etc/nginx/sites-enabled # folder for vhosts (nginx server definitions)
+      - ./bcol/proxy/config/conf.d:/etc/nginx/conf.d # Folder for global nginx configuration (pls bake: proxy-global, compression_and_cache-control - leave an example of COMPRESSION conf for end-user review, but not proxy-glob)
+      - ./bcol/proxy/config/upstreams.d:/etc/nginx/upstreams.d # folder for defining upstreams (upstream defines: devel, stage, production, etc. - bake one upstream for ILD)
+      - ./bcol/proxy/config/sites-enabled:/etc/nginx/sites-enabled # folder for vhosts (similar to Apache - bake isle.localdomain from belle, turn of OSCP / HSTS)
     # restart: unless-stopped
     # command: [nginx-debug, '-g', 'daemon off;']
 
